@@ -43,3 +43,6 @@ coverage/
 
 # Caches
 .cache/
+
+# Secrets
+application-secret.yml
