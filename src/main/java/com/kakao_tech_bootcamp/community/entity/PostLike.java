@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class PostLike {
 
-    @Id
+    @EmbeddedId
     private PostLikeId id;
 
     @CreatedDate
