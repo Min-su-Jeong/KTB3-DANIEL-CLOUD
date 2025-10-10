@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -12,8 +13,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user")
-@Getter
+@Table(name = "`user`") // 예약어 충돌 방지
+@Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class User {
@@ -53,4 +54,6 @@ public class User {
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
     }
+
+    // @Setter로 모든 setter 자동 생성됨
 }
