@@ -57,7 +57,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        if (req.nickname() != null && !req.nickname().equals(user.getNickname()) && userRepository.existsActiveByNickname(req.nickname())) {
+        if (req.nickname() != null && !req.nickname().equals(user.getNickname()) && userRepository.existsByNicknameAndDeletedAtIsNull(req.nickname())) {
             throw new IllegalArgumentException("중복된 닉네임 입니다.");
         }
         if (req.nickname() != null) user.setNickname(req.nickname());
@@ -90,11 +90,11 @@ public class UserService {
     }
 
     public UserResponses.DuplicateCheckResponse checkEmail(String email) {
-        return new UserResponses.DuplicateCheckResponse(userRepository.existsActiveByEmail(email));
+        return new UserResponses.DuplicateCheckResponse(userRepository.existsByEmailAndDeletedAtIsNull(email));
     }
 
     public UserResponses.DuplicateCheckResponse checkNickname(String nickname) {
-        return new UserResponses.DuplicateCheckResponse(userRepository.existsActiveByNickname(nickname));
+        return new UserResponses.DuplicateCheckResponse(userRepository.existsByNicknameAndDeletedAtIsNull(nickname));
     }
 
     // 회원가입 요청 검증
@@ -105,10 +105,10 @@ public class UserService {
         if (!req.password().equals(req.confirmPassword())) {
             throw new IllegalArgumentException("비밀번호가 확인과 다릅니다.");
         }
-        if (userRepository.existsActiveByEmail(req.email())) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(req.email())) {
             throw new IllegalArgumentException("중복된 이메일 입니다.");
         }
-        if (userRepository.existsActiveByNickname(req.nickname())) {
+        if (userRepository.existsByNicknameAndDeletedAtIsNull(req.nickname())) {
             throw new IllegalArgumentException("중복된 닉네임 입니다.");
         }
     }
