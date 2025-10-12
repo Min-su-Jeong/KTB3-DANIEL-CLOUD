@@ -19,6 +19,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT u FROM User u WHERE u.email = :email AND u.deletedAt IS NULL")
     Optional<User> findActiveByEmail(@Param("email") String email);
 
-    @Query("SELECT u FROM User u WHERE u.id = :id AND u.deletedAt IS NULL")
+    @Query("SELECT u FROM User u WHERE u.userId = :id AND u.deletedAt IS NULL")
     Optional<User> findActiveById(@Param("id") Integer id);
 }
