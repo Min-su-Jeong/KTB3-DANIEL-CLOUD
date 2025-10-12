@@ -46,8 +46,7 @@ public class ImageController {
     }
 
     // 이미지 조회
-    @GetMapping("/{imageId}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getImage(@PathVariable Long imageId) {
+    @GetMapping("/{imageId}"    public ResponseEntity<ApiResponse<Map<String, Object>>> getImage(@PathVariable Integer imageId) {
         try {
             Image image = imageService.getImage(imageId);
             
@@ -92,7 +91,7 @@ public class ImageController {
 
     // 이미지 삭제
     @DeleteMapping("/{imageId}")
-    public ResponseEntity<ApiResponse<Void>> deleteImage(@PathVariable Long imageId) {
+    public ResponseEntity<ApiResponse<Void>> deleteImage(@PathVariable Integer imageId) {
         try {
             imageService.deleteImage(imageId);
             return ResponseEntity.ok(new ApiResponse<>("delete_success", null));

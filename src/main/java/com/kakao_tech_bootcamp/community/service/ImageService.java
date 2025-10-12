@@ -75,7 +75,7 @@ public class ImageService {
     }
 
     // 이미지 조회
-    public Image getImage(Long imageId) {
+    public Image getImage(Integer imageId) {
         return imageRepository.findById(imageId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이미지입니다."));
     }
@@ -87,7 +87,7 @@ public class ImageService {
 
     // 이미지 삭제
     @Transactional
-    public void deleteImage(Long imageId) {
+    public void deleteImage(Integer imageId) {
         Image image = imageRepository.findById(imageId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이미지입니다."));
         

@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 // 공용 이미지 데이터 접근: 이미지 중앙 관리
-public interface ImageRepository extends JpaRepository<Image, Long> {
+public interface ImageRepository extends JpaRepository<Image, Integer> {
 
     // 특정 사용자의 이미지 목록 조회
     List<Image> findByUserIdOrderByCreatedAtDesc(@Param("userId") Integer userId);
