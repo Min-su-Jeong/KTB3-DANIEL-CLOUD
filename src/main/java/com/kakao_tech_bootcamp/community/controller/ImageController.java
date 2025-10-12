@@ -33,11 +33,7 @@ public class ImageController {
             Map<String, Object> data = Map.of(
                 "imageId", image.getImageId(),
                 "fileUrl", image.getFileUrl(),
-                "thumbnailUrl", image.getThumbnailUrl(),
-                "fileName", image.getFileName(),
-                "fileSize", image.getFileSize(),
-                "width", image.getWidth(),
-                "height", image.getHeight()
+                "thumbnailUrl", image.getThumbnailUrl()
             );
             
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -59,12 +55,7 @@ public class ImageController {
                 "imageId", image.getImageId(),
                 "fileUrl", image.getFileUrl(),
                 "thumbnailUrl", image.getThumbnailUrl(),
-                "fileName", image.getFileName(),
-                "fileSize", image.getFileSize(),
-                "width", image.getWidth(),
-                "height", image.getHeight(),
-                "userId", image.getUserId(),
-                "createdAt", image.getCreatedAt()
+                "userId", image.getUserId()
             );
             
             return ResponseEntity.ok(new ApiResponse<>("success", data));
@@ -87,11 +78,6 @@ public class ImageController {
                     imageMap.put("imageId", image.getImageId());
                     imageMap.put("fileUrl", image.getFileUrl());
                     imageMap.put("thumbnailUrl", image.getThumbnailUrl());
-                    imageMap.put("fileName", image.getFileName());
-                    imageMap.put("fileSize", image.getFileSize());
-                    imageMap.put("width", image.getWidth());
-                    imageMap.put("height", image.getHeight());
-                    imageMap.put("createdAt", image.getCreatedAt());
                     return imageMap;
                 })
                 .toList();
