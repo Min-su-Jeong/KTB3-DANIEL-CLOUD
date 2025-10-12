@@ -5,14 +5,13 @@ import com.kakao_tech_bootcamp.community.dto.UserRequests;
 import com.kakao_tech_bootcamp.community.dto.UserResponses;
 import com.kakao_tech_bootcamp.community.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 // 사용자 비즈니스 로직: 회원가입/로그인/조회/수정/비번변경/탈퇴 처리
 @Service
@@ -31,10 +30,10 @@ public class UserService {
                 .email(req.email())
                 .password(hash)
                 .nickname(req.nickname())
-                .profileImageUrl(req.profileImageUrl())
                 .build());
 
-        return new UserResponses.UserResponse(saved.getUserId(), saved.getEmail(), saved.getNickname(), saved.getProfileImageUrl(), saved.getCreatedAt());
+        return new UserResponses.UserResponse(saved.getUserId(), saved.getEmail(), saved.getNickname(), 
+            saved.getProfileImage() != null ? saved.getProfileImage().getFileUrl() : null, saved.getCreatedAt());
     }
 
     public UserResponses.LoginResponse login(UserRequests.LoginRequest req) {
@@ -43,13 +42,15 @@ public class UserService {
         if (!verifyPassword(req.password(), user.getPassword())) {
             throw new IllegalArgumentException("아이디 또는 비밀번호를 확인해주세요.");
         }
-        return new UserResponses.LoginResponse(user.getUserId(), user.getEmail(), user.getNickname(), user.getProfileImageUrl());
+        return new UserResponses.LoginResponse(user.getUserId(), user.getEmail(), user.getNickname(), 
+            user.getProfileImage() != null ? user.getProfileImage().getFileUrl() : null);
     }
 
     public UserResponses.UserResponse getUser(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        return new UserResponses.UserResponse(user.getUserId(), user.getEmail(), user.getNickname(), user.getProfileImageUrl(), user.getCreatedAt());
+        return new UserResponses.UserResponse(user.getUserId(), user.getEmail(), user.getNickname(), 
+            user.getProfileImage() != null ? user.getProfileImage().getFileUrl() : null, user.getCreatedAt());
     }
 
     @Transactional
@@ -57,14 +58,19 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        if (req.nickname() != null && !req.nickname().equals(user.getNickname()) && userRepository.existsByNicknameAndDeletedAtIsNull(req.nickname())) {
-            throw new IllegalArgumentException("중복된 닉네임 입니다.");
+        if (req.nickname() != null && !req.nickname().equals(user.getNickname())) {
+            if (req.nickname().length() > 20) {
+                throw new IllegalArgumentException("닉네임은 20자 이하로 입력해주세요.");
+            }
+            if (userRepository.existsByNicknameAndDeletedAtIsNull(req.nickname())) {
+                throw new IllegalArgumentException("중복된 닉네임 입니다.");
+            }
         }
-        if (req.nickname() != null) user.setNickname(req.nickname());
-        if (req.profileImageUrl() != null) user.setProfileImageUrl(req.profileImageUrl());
+        if (req.nickname() != null) user.updateNickname(req.nickname());
 
         User saved = userRepository.save(user);
-        return new UserResponses.UserResponse(saved.getUserId(), saved.getEmail(), saved.getNickname(), saved.getProfileImageUrl(), saved.getCreatedAt());
+        return new UserResponses.UserResponse(saved.getUserId(), saved.getEmail(), saved.getNickname(), 
+            saved.getProfileImage() != null ? saved.getProfileImage().getFileUrl() : null, saved.getCreatedAt());
     }
 
     @Transactional
@@ -77,7 +83,7 @@ public class UserService {
         }
         validateChangePasswordRequest(req);
         
-        user.setPassword(hashPassword(req.newPassword()));
+        user.updatePassword(hashPassword(req.newPassword()));
         userRepository.save(user);
     }
 
@@ -85,7 +91,7 @@ public class UserService {
     public void delete(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        user.setDeletedAt(LocalDateTime.now());
+        user.markAsDeleted();
         userRepository.save(user);
     }
 
@@ -97,6 +103,7 @@ public class UserService {
         return new UserResponses.DuplicateCheckResponse(userRepository.existsByNicknameAndDeletedAtIsNull(nickname));
     }
 
+
     // 회원가입 요청 검증
     private void validateSignUpRequest(UserRequests.SignUpRequest req) {
         if (req.email() == null || req.password() == null || req.confirmPassword() == null || req.nickname() == null) {
@@ -104,6 +111,9 @@ public class UserService {
         }
         if (!req.password().equals(req.confirmPassword())) {
             throw new IllegalArgumentException("비밀번호가 확인과 다릅니다.");
+        }
+        if (req.nickname().length() > 20) {
+            throw new IllegalArgumentException("닉네임은 20자 이하로 입력해주세요.");
         }
         if (userRepository.existsByEmailAndDeletedAtIsNull(req.email())) {
             throw new IllegalArgumentException("중복된 이메일 입니다.");
