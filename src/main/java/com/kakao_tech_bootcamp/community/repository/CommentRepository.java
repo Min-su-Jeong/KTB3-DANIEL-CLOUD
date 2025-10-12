@@ -25,6 +25,9 @@ public interface CommentRepository extends JpaRepository<Comment, Integer> {
     Long countByParentId(@Param("parentId") Integer parentId);
 
     // 특정 게시글의 댓글 삭제
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Comment c WHERE c.post.postId = :postId")
     void deleteByPostId(@Param("postId") Integer postId);
 
     // 특정 댓글과 대댓글들 삭제
