@@ -1,21 +1,21 @@
 package com.kakao_tech_bootcamp.community.service;
 
 import com.kakao_tech_bootcamp.community.entity.Image;
+import com.kakao_tech_bootcamp.community.entity.Post;
 import com.kakao_tech_bootcamp.community.entity.PostImage;
+import com.kakao_tech_bootcamp.community.entity.User;
 import com.kakao_tech_bootcamp.community.repository.ImageRepository;
 import com.kakao_tech_bootcamp.community.repository.PostImageRepository;
 import com.kakao_tech_bootcamp.community.repository.PostRepository;
+import com.kakao_tech_bootcamp.community.repository.UserRepository;
 import com.kakao_tech_bootcamp.community.dto.ImageRequests;
 import com.kakao_tech_bootcamp.community.dto.ImageResponses;
-import com.kakao_tech_bootcamp.community.config.FileUploadConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,10 +31,16 @@ import java.util.UUID;
 @Slf4j
 public class ImageService {
 
+    // TODO: 임시로 로컬 파일 시스템 사용 - 추후 S3로 변경 예정
+    // 파일 업로드 설정 (로컬 파일 시스템)
+    private static final String UPLOAD_DIR = "uploads";
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final List<String> ALLOWED_EXTENSIONS = List.of("jpg", "jpeg", "png", "gif", "webp");
+
     private final ImageRepository imageRepository;
     private final PostImageRepository postImageRepository;
     private final PostRepository postRepository;
-    private final FileUploadConfig fileUploadConfig;
+    private final UserRepository userRepository;
 
     // 이미지 업로드 (중복 체크 포함)
     @Transactional
@@ -46,17 +52,14 @@ public class ImageService {
         String fileUrl = uploadImageFile(file);
         
         // 중복 체크
-        Image existingImage = imageRepository.findByFileUrlAndDeletedAtIsNull(fileUrl).orElse(null);
+        Image existingImage = imageRepository.findByFileUrl(fileUrl).orElse(null);
         if (existingImage != null) {
             log.info("중복 이미지 발견, 기존 이미지 반환: imageId={}, fileUrl={}", existingImage.getImageId(), fileUrl);
             return existingImage;
         }
         
-        // 이미지 메타데이터 추출
-        ImageMetadata metadata = extractImageMetadata(file);
-        
         // 썸네일 생성
-        String thumbnailUrl = generateThumbnail(fileUrl, metadata);
+        String thumbnailUrl = generateThumbnail(fileUrl);
         
         // Image 엔티티 저장
         Image image = Image.builder()
@@ -73,19 +76,19 @@ public class ImageService {
 
     // 이미지 조회
     public Image getImage(Long imageId) {
-        return imageRepository.findActiveById(imageId)
+        return imageRepository.findById(imageId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이미지입니다."));
     }
 
     // 사용자 이미지 목록 조회
     public List<Image> getUserImages(Long userId) {
-        return imageRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId);
+        return imageRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    // 이미지 삭제 (soft delete)
+    // 이미지 삭제
     @Transactional
     public void deleteImage(Long imageId) {
-        Image image = imageRepository.findActiveById(imageId)
+        Image image = imageRepository.findById(imageId)
             .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이미지입니다."));
         
         // 파일 삭제
@@ -94,8 +97,8 @@ public class ImageService {
             deleteImageFile(image.getThumbnailUrl());
         }
         
-        // soft delete
-        imageRepository.softDeleteById(imageId);
+        // hard delete
+        imageRepository.delete(image);
         log.info("이미지 삭제 완료: imageId={}", imageId);
     }
 
@@ -111,14 +114,65 @@ public class ImageService {
                 deleteImageFile(image.getThumbnailUrl());
             }
             
-            // soft delete
-            imageRepository.softDeleteById(image.getImageId());
+            // hard delete
+            imageRepository.delete(image);
         }
         
         log.info("사용하지 않는 이미지 정리 완료: {}개", unusedImages.size());
     }
 
-    // ========== 게시글 이미지 관련 기능 ==========
+    // ========== 프로필 이미지 관련 기능 ==========
+
+    // 프로필 이미지 업로드
+    @Transactional
+    public String uploadProfileImage(Integer userId, MultipartFile file) {
+        // 사용자 존재 여부 검증
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        // ImageService를 통해 이미지 업로드 (중복 체크 포함)
+        Image image = uploadImage((long) userId, file);
+        
+        // 기존 프로필 이미지가 있다면 삭제
+        if (user.getProfileImage() != null) {
+            deleteImage(user.getProfileImage().getImageId());
+        }
+        
+        // User 엔티티 업데이트
+        user.updateProfileImage(image);
+        userRepository.save(user);
+        
+        log.info("프로필 이미지 업로드 완료: userId={}, imageId={}", userId, image.getImageId());
+        return image.getFileUrl();
+    }
+
+    // 프로필 이미지 삭제
+    @Transactional
+    public void deleteProfileImage(Integer userId) {
+        // 사용자 존재 여부 검증
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        if (user.getProfileImage() == null) {
+            throw new IllegalArgumentException("삭제할 프로필 이미지가 없습니다.");
+        }
+
+        // ImageService를 통해 이미지 삭제
+        deleteImage(user.getProfileImage().getImageId());
+        
+        // DB에서 프로필 이미지 관계 제거
+        user.removeProfileImage();
+        userRepository.save(user);
+        
+        log.info("프로필 이미지 삭제 완료: userId={}", userId);
+    }
+
+    // 프로필 이미지 URL 조회
+    public String getProfileImageUrl(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        return user.getProfileImage() != null ? user.getProfileImage().getFileUrl() : null;
+    }
 
     // 게시글 이미지 추가
     @Transactional
@@ -140,12 +194,16 @@ public class ImageService {
             // 다음 순서 계산
             Integer nextOrder = postImageRepository.findNextImageOrder(postId);
             
+            // Post 엔티티 조회
+            Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+            
             // PostImage 엔티티 생성 및 저장
-            PostImage postImage = new PostImage(
-                postId,
-                image.getImageId(),
-                nextOrder
-            );
+            PostImage postImage = PostImage.builder()
+                .post(post)
+                .imageUrl(image.getFileUrl())
+                .imageOrder(nextOrder)
+                .build();
             
             postImageRepository.save(postImage);
             imageUrls.add(image.getFileUrl());
@@ -160,36 +218,27 @@ public class ImageService {
         // 게시글 존재 여부 검증
         validatePostExists(postId);
         
-        List<PostImage> postImages = postImageRepository.findByPostIdAndDeletedAtIsNullOrderByDisplayOrderAsc(postId);
+        List<PostImage> postImages = postImageRepository.findByPostIdOrderByImageOrderAsc(postId);
         
         return postImages.stream()
                 .map(postImage -> new ImageResponses.PostImageResponse(
-                    postImage.getId().getImageId(),
-                    postImage.getId().getPostId(),
-                    getImageUrl(postImage.getId().getImageId()), // Image 엔티티에서 URL 조회
-                    postImage.getDisplayOrder(),
+                    postImage.getImageId(),
+                    postImage.getPost().getPostId(),
+                    postImage.getImageUrl(),
+                    postImage.getImageOrder(),
                     postImage.getCreatedAt()
                 ))
                 .toList();
     }
 
-    // Image ID로 URL 조회
-    private String getImageUrl(Integer imageId) {
-        Image image = imageRepository.findById((long) imageId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이미지입니다."));
-        return image.getFileUrl();
-    }
-
     // 게시글 이미지 삭제
     @Transactional
     public void removeImageFromPost(Integer imageId) {
-        // PostImage 조회
-        PostImage postImage = postImageRepository.findByImageIdAndDeletedAtIsNull(imageId)
+        // PostImage 조회 및 삭제 (hard delete)
+        PostImage postImage = postImageRepository.findByImageId(imageId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이미지입니다."));
         
-        // PostImage soft delete
-        postImage.markAsDeleted();
-        postImageRepository.save(postImage);
+        postImageRepository.delete(postImage);
         
         log.info("게시글 이미지 삭제 완료: imageId={}", imageId);
     }
@@ -198,7 +247,7 @@ public class ImageService {
     @Transactional
     public void updatePostImageOrder(Integer imageId, ImageRequests.UpdateImageOrderRequest req) {
         // PostImage 조회
-        PostImage postImage = postImageRepository.findByImageIdAndDeletedAtIsNull(imageId)
+        PostImage postImage = postImageRepository.findByImageId(imageId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이미지입니다."));
         
         // 순서 검증
@@ -222,28 +271,27 @@ public class ImageService {
             throw new IllegalArgumentException("존재하지 않는 게시글입니다.");
         }
     }
-
-    // ========== 유틸리티 메서드 ==========
     
     private void validateImageFile(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("파일이 비어있습니다");
         }
         
-        if (file.getSize() > fileUploadConfig.getMaxSizeInBytes()) {
+        if (file.getSize() > MAX_FILE_SIZE) {
             throw new IllegalArgumentException("파일 크기가 너무 큽니다");
         }
         
         String fileExtension = getFileExtension(file.getOriginalFilename());
-        if (!fileUploadConfig.getAllowedExtensions().contains(fileExtension)) {
+        if (!ALLOWED_EXTENSIONS.contains(fileExtension)) {
             throw new IllegalArgumentException("지원하지 않는 파일 형식입니다");
         }
     }
     
+    // TODO: 로컬 파일 시스템 업로드 - 추후 S3로 변경 예정
     private String uploadImageFile(MultipartFile file) {
         try {
             String fileName = generateUniqueFileName(file.getOriginalFilename());
-            String uploadDir = fileUploadConfig.getUploadDir() + "/images";
+            String uploadDir = UPLOAD_DIR + "/images";
             createUploadDirectory(uploadDir);
             
             Path filePath = Paths.get(uploadDir, fileName);
@@ -255,7 +303,7 @@ public class ImageService {
         }
     }
     
-    private String generateThumbnail(String fileUrl, ImageMetadata metadata) {
+    private String generateThumbnail(String fileUrl) {
         try {
             // 썸네일 생성 로직 (200x200)
             String thumbnailFileName = "thumb_" + getFileNameFromUrl(fileUrl);
@@ -269,25 +317,10 @@ public class ImageService {
         }
     }
     
-    private ImageMetadata extractImageMetadata(MultipartFile file) {
-        try {
-            BufferedImage image = ImageIO.read(file.getInputStream());
-            return ImageMetadata.builder()
-                .width(image.getWidth())
-                .height(image.getHeight())
-                .build();
-        } catch (IOException e) {
-            log.warn("이미지 메타데이터 추출 실패: {}", e.getMessage());
-            return ImageMetadata.builder()
-                .width(0)
-                .height(0)
-                .build();
-        }
-    }
-    
+    // TODO: 로컬 파일 시스템 삭제 - 추후 S3로 변경 예정
     private void deleteImageFile(String fileUrl) {
         try {
-            Path filePath = Paths.get(fileUploadConfig.getUploadDir() + fileUrl);
+            Path filePath = Paths.get(UPLOAD_DIR + fileUrl);
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
             log.error("파일 삭제 실패: {}", e.getMessage());
@@ -313,13 +346,5 @@ public class ImageService {
     
     private String getFileNameFromUrl(String fileUrl) {
         return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-    }
-    
-    // 이미지 메타데이터 DTO
-    @lombok.Builder
-    @lombok.Getter
-    private static class ImageMetadata {
-        private final Integer width;
-        private final Integer height;
     }
 }
