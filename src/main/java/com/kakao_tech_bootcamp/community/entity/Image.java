@@ -5,10 +5,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "image")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class Image {
 
     @Id
@@ -23,14 +26,18 @@ public class Image {
     private String thumbnailUrl;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private Integer userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
 
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private java.time.LocalDateTime createdAt;
+
     @Builder
-    public Image(String fileUrl, String thumbnailUrl, Long userId) {
+    public Image(String fileUrl, String thumbnailUrl, Integer userId) {
         this.fileUrl = fileUrl;
         this.thumbnailUrl = thumbnailUrl;
         this.userId = userId;
