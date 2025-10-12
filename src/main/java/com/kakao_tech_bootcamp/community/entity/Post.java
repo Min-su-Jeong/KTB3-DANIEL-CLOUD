@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -14,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "post")
-@Getter @Setter
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Post {
@@ -27,7 +26,7 @@ public class Post {
     @Column(name = "user_id", nullable = false)
     private Integer userId;
 
-    @Column(name = "title", nullable = false, length = 50)
+    @Column(name = "title", nullable = false, length = 100)
     private String title;
 
     @Column(name = "content", nullable = false, columnDefinition = "LONGTEXT")
@@ -41,9 +40,18 @@ public class Post {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Builder
     public Post(Integer userId, String title, String content) {
         this.userId = userId;
+        this.title = title;
+        this.content = content;
+    }
+
+    // 게시글 수정을 위한 메서드
+    public void updateContent(String title, String content) {
         this.title = title;
         this.content = content;
     }
