@@ -23,8 +23,9 @@ public class Post {
     @Column(name = "post_id")
     private Integer postId;
 
-    @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "title", nullable = false, length = 100)
     private String title;
@@ -44,8 +45,8 @@ public class Post {
     private LocalDateTime deletedAt;
 
     @Builder
-    public Post(Integer userId, String title, String content) {
-        this.userId = userId;
+    public Post(User user, String title, String content) {
+        this.user = user;
         this.title = title;
         this.content = content;
     }
