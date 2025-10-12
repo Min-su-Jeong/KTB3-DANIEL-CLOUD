@@ -28,6 +28,11 @@ public class Post {
     private User user;
 
     @Column(name = "title", nullable = false, length = 100)
+  
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
+
+    @Column(name = "title", nullable = false, length = 50)
     private String title;
 
     @Column(name = "content", nullable = false, columnDefinition = "LONGTEXT")

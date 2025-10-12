@@ -25,5 +25,4 @@ public class PostLike {
     public PostLike(Integer userId, Integer postId) {
         this.id = new PostLikeId(userId, postId);
     }
-
 }

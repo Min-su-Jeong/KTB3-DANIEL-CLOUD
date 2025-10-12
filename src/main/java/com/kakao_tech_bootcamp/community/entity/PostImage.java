@@ -43,7 +43,6 @@ public class PostImage {
         this.imageOrder = imageOrder != null ? imageOrder : 0;
     }
 
-
     // 이미지 URL 수정을 위한 메서드
     public void updateImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;

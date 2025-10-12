@@ -30,6 +30,12 @@ public class Comment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+  
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
+
+    @Column(name = "post_id", nullable = false)
+    private Integer postId;
 
     @Column(name = "parent_id")
     private Integer parentId;
@@ -39,6 +45,12 @@ public class Comment {
 
     @Column(name = "depth", nullable = false)
     private Integer depth;
+
+    @Column(name = "depth", nullable = false)
+    private Integer depth = 0;
+
+    @Column(name = "content", nullable = false, length = 500)
+    private String content;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -65,5 +77,18 @@ public class Comment {
     // 댓글 내용 수정을 위한 메서드
     public void updateCommentContent(String content) {
         this.content = content;
+    }
+}
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Builder
+    public Comment(Integer userId, Integer postId, Integer parentId, String content) {
+        this.userId = userId;
+        this.postId = postId;
+        this.parentId = parentId;
+        this.content = content;
+        this.depth = parentId != null ? 1 : 0; // 대댓글인 경우 depth 1
     }
 }
