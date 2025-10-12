@@ -5,7 +5,7 @@ public class CommentRequests {
 
     // 댓글 작성 요청 DTO
     public record CreateCommentRequest(
-            Integer parentId, // 대댓글의 경우 부모 댓글 ID (선택적)
+            Integer parentId,
             String content
     ) {}
 
