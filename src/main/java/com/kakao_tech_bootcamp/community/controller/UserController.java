@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -78,22 +77,5 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> removeUser(@PathVariable Integer userId) {
         userService.delete(userId);
         return ResponseEntity.ok(new ApiResponse<>("delete_success", null));
-    }
-
-    // 프로필 이미지 업로드
-    @PostMapping("/{userId}/profile-image")
-    public ResponseEntity<ApiResponse<Map<String, String>>> uploadProfileImage(
-            @PathVariable Integer userId,
-            @RequestParam MultipartFile file) {
-        String imageUrl = userService.uploadProfileImage(userId, file);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<>("ok", Map.of("imageUrl", imageUrl)));
-    }
-
-    // 프로필 이미지 삭제
-    @DeleteMapping("/{userId}/profile-image")
-    public ResponseEntity<ApiResponse<Void>> deleteProfileImage(@PathVariable Integer userId) {
-        userService.deleteProfileImage(userId);
-        return ResponseEntity.ok(new ApiResponse<>("ok", null));
     }
 }
