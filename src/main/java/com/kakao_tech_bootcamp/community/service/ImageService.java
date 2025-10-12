@@ -44,7 +44,7 @@ public class ImageService {
 
     // 이미지 업로드 (중복 체크 포함)
     @Transactional
-    public Image uploadImage(Long userId, MultipartFile file) {
+    public Image uploadImage(Integer userId, MultipartFile file) {
         // 파일 검증
         validateImageFile(file);
         
@@ -81,7 +81,7 @@ public class ImageService {
     }
 
     // 사용자 이미지 목록 조회
-    public List<Image> getUserImages(Long userId) {
+    public List<Image> getUserImages(Integer userId) {
         return imageRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
@@ -131,7 +131,7 @@ public class ImageService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         // ImageService를 통해 이미지 업로드 (중복 체크 포함)
-        Image image = uploadImage((long) userId, file);
+        Image image = uploadImage(userId, file);
         
         // 기존 프로필 이미지가 있다면 삭제
         if (user.getProfileImage() != null) {
@@ -189,7 +189,7 @@ public class ImageService {
         
         for (MultipartFile file : files) {
             // ImageService를 통해 이미지 업로드 (중복 체크 포함)
-            Image image = uploadImage((long) postId, file);
+            Image image = uploadImage(postId, file);
             
             // 다음 순서 계산
             Integer nextOrder = postImageRepository.findNextImageOrder(postId);

@@ -26,7 +26,7 @@ public class ImageController {
     @PostMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> uploadImage(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("userId") Long userId) {
+            @RequestParam("userId") Integer userId) {
         try {
             Image image = imageService.uploadImage(userId, file);
             
@@ -68,7 +68,7 @@ public class ImageController {
 
     // 사용자 이미지 목록 조회
     @GetMapping("/users/{userId}")
-    public ResponseEntity<ApiResponse<Map<String, List<Map<String, Object>>>>> getUserImages(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<Map<String, List<Map<String, Object>>>>> getUserImages(@PathVariable Integer userId) {
         try {
             List<Image> images = imageService.getUserImages(userId);
             

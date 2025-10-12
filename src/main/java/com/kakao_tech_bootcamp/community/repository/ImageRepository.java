@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ImageRepository extends JpaRepository<Image, Long> {
 
     // 특정 사용자의 이미지 목록 조회
-    List<Image> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
+    List<Image> findByUserIdOrderByCreatedAtDesc(@Param("userId") Integer userId);
 
     // 파일 URL로 이미지 조회 (중복 체크용)
     Optional<Image> findByFileUrl(@Param("fileUrl") String fileUrl);
@@ -23,11 +23,10 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
     @Modifying
     @Transactional
     @Query("DELETE FROM Image i WHERE i.userId = :userId")
-    void deleteByUserId(@Param("userId") Long userId);
+    void deleteByUserId(@Param("userId") Integer userId);
 
     // 사용하지 않는 이미지 조회 (참조되지 않는 이미지들)
     @Query("SELECT i FROM Image i WHERE i.imageId NOT IN " +
-           "(SELECT pi.image.imageId FROM PostImage pi) " +
-           "AND i.imageId NOT IN (SELECT u.profileImage.imageId FROM User u WHERE u.profileImage IS NOT NULL)")
+           "(SELECT u.profileImage.imageId FROM User u WHERE u.profileImage IS NOT NULL)")
     List<Image> findUnusedImages();
 }
