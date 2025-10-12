@@ -30,7 +30,7 @@ public class PostLikeService {
         validatePostExists(postId);
         
         // 이미 좋아요를 눌렀는지 확인
-        boolean isAlreadyLiked = postLikeRepository.existsByUserIdAndPostIdAndDeletedAtIsNull(userId, postId);
+        boolean isAlreadyLiked = postLikeRepository.existsByIdUserIdAndIdPostId(userId, postId);
         if (isAlreadyLiked) {
             throw new IllegalArgumentException("이미 좋아요를 누른 게시글입니다.");
         }
@@ -51,13 +51,11 @@ public class PostLikeService {
         validateUserExists(userId);
         validatePostExists(postId);
         
-        // 기존 좋아요 확인
-        PostLike existingLike = postLikeRepository.findByUserIdAndPostIdAndDeletedAtIsNull(userId, postId)
+        // 기존 좋아요 확인 및 삭제
+        PostLike existingLike = postLikeRepository.findByIdUserIdAndIdPostId(userId, postId)
                 .orElseThrow(() -> new IllegalArgumentException("좋아요를 누르지 않은 게시글입니다."));
         
-        // Soft delete: deletedAt 설정
-        existingLike.markAsDeleted();
-        postLikeRepository.save(existingLike);
+        postLikeRepository.delete(existingLike);
         
         // 통계 업데이트
         postStatService.decrementLikeCount(postId);
@@ -71,10 +69,10 @@ public class PostLikeService {
         validatePostExists(postId);
         
         // 좋아요 상태 확인
-        boolean isLiked = postLikeRepository.existsByUserIdAndPostIdAndDeletedAtIsNull(userId, postId);
+        boolean isLiked = postLikeRepository.existsByIdUserIdAndIdPostId(userId, postId);
         
         // 좋아요 개수 조회
-        long likeCount = postLikeRepository.countByPostIdAndDeletedAtIsNull(postId);
+        long likeCount = postLikeRepository.countByIdPostId(postId);
         
         return new PostResponses.LikeStatusResponse(isLiked, (int) likeCount);
     }
@@ -83,7 +81,7 @@ public class PostLikeService {
         // 게시글 존재 여부 검증
         validatePostExists(postId);
         
-        return (int) postLikeRepository.countByPostIdAndDeletedAtIsNull(postId);
+        return (int) postLikeRepository.countByIdPostId(postId);
     }
     
     private void validateUserExists(Integer userId) {

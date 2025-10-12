@@ -14,20 +14,17 @@ import java.util.Optional;
 public interface PostLikeRepository extends JpaRepository<PostLike, PostLikeId> {
 
     // 특정 사용자가 특정 게시글에 좋아요를 눌렀는지 확인
-    @Query("SELECT CASE WHEN COUNT(pl) > 0 THEN true ELSE false END FROM PostLike pl WHERE pl.id.userId = :userId AND pl.id.postId = :postId AND pl.deletedAt IS NULL")
-    boolean existsByUserIdAndPostIdAndDeletedAtIsNull(@Param("userId") Integer userId, @Param("postId") Integer postId);
+    boolean existsByIdUserIdAndIdPostId(@Param("userId") Integer userId, @Param("postId") Integer postId);
 
     // 특정 게시글의 좋아요 개수 조회
-    @Query("SELECT COUNT(pl) FROM PostLike pl WHERE pl.id.postId = :postId AND pl.deletedAt IS NULL")
-    long countByPostIdAndDeletedAtIsNull(@Param("postId") Integer postId);
+    long countByIdPostId(@Param("postId") Integer postId);
 
     // 특정 사용자의 좋아요 조회
-    @Query("SELECT pl FROM PostLike pl WHERE pl.id.userId = :userId AND pl.id.postId = :postId AND pl.deletedAt IS NULL")
-    Optional<PostLike> findByUserIdAndPostIdAndDeletedAtIsNull(@Param("userId") Integer userId, @Param("postId") Integer postId);
+    Optional<PostLike> findByIdUserIdAndIdPostId(@Param("userId") Integer userId, @Param("postId") Integer postId);
 
     // 특정 게시글의 모든 좋아요 삭제
     @Modifying
     @Transactional
-    @Query("UPDATE PostLike pl SET pl.deletedAt = CURRENT_TIMESTAMP WHERE pl.id.postId = :postId AND pl.deletedAt IS NULL")
+    @Query("DELETE FROM PostLike pl WHERE pl.id.postId = :postId")
     void deleteByPostId(@Param("postId") Integer postId);
 }
