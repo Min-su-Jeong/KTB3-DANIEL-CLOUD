@@ -12,7 +12,13 @@ public class PostResponses {
             String title,
             String content,
             LocalDateTime createdAt,
-            LocalDateTime updatedAt
+            LocalDateTime updatedAt,
+            java.util.List<com.kakao_tech_bootcamp.community.dto.ImageResponses.PostImageResponse> images,
+            String authorNickname,
+            String authorProfileImageUrl,
+            Integer likeCount,
+            Integer commentCount,
+            Integer viewCount
     ) {}
 
     // 게시글 목록 응답 DTO (게시글 목록 조회 용도)
@@ -20,6 +26,25 @@ public class PostResponses {
             Integer postId,
             Integer userId,
             String title,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            Integer likeCount,
+            Integer commentCount,
+            Integer viewCount,
+            String authorNickname,
+            String authorProfileImageUrl
+    ) {}
+
+    // 좋아요 상태 응답 DTO
+    public record LikeStatusResponse(
+            boolean isLiked,
+            Integer likeCount
+    ) {}
+
+    // 게시글 통계 응답 DTO
+    public record PostStatResponse(
+            Integer postId,
+            Integer likeCount,
+            Integer viewCount,
+            Integer commentCount
     ) {}
 }

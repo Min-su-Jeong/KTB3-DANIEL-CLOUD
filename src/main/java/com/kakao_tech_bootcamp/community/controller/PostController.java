@@ -4,9 +4,9 @@ import com.kakao_tech_bootcamp.community.common.ApiResponse;
 import com.kakao_tech_bootcamp.community.dto.PostRequests;
 import com.kakao_tech_bootcamp.community.dto.PostResponses;
 import com.kakao_tech_bootcamp.community.service.PostService;
+import com.kakao_tech_bootcamp.community.service.PostLikeService;
+import com.kakao_tech_bootcamp.community.service.PostStatService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +21,8 @@ import java.util.Map;
 public class PostController {
 
     private final PostService postService;
+    private final PostLikeService postLikeService;
+    private final PostStatService postStatService;
 
     // 게시글 작성
     @PostMapping
@@ -57,5 +59,43 @@ public class PostController {
     public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable Integer postId) {
         postService.deletePost(postId);
         return ResponseEntity.ok(new ApiResponse<>("ok", null));
+    }
+
+    // 게시글 좋아요 추가
+    @PostMapping("/{postId}/likes")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> addPostLike(
+            @PathVariable Integer postId,
+            @RequestParam Integer userId) {
+        postLikeService.addPostLike(userId, postId);
+        int likeCount = postLikeService.getPostLikeCount(postId);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new ApiResponse<>("ok", Map.of("likeCount", likeCount)));
+    }
+
+    // 게시글 좋아요 삭제
+    @DeleteMapping("/{postId}/likes")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> removePostLike(
+            @PathVariable Integer postId,
+            @RequestParam Integer userId) {
+        postLikeService.removePostLike(userId, postId);
+        int likeCount = postLikeService.getPostLikeCount(postId);
+        return ResponseEntity.ok(new ApiResponse<>("ok", Map.of("likeCount", likeCount)));
+    }
+
+    // 게시글 좋아요 상태 조회
+    @GetMapping("/{postId}/likes")
+    public ResponseEntity<ApiResponse<PostResponses.LikeStatusResponse>> getPostLikeStatus(
+            @PathVariable Integer postId,
+            @RequestParam Integer userId) {
+        PostResponses.LikeStatusResponse response = postLikeService.getPostLikeStatus(userId, postId);
+        return ResponseEntity.ok(new ApiResponse<>("ok", response));
+    }
+
+    // 게시글 통계 조회
+    @GetMapping("/{postId}/stats")
+    public ResponseEntity<ApiResponse<PostResponses.PostStatResponse>> getPostStats(@PathVariable Integer postId) {
+        PostResponses.PostStatResponse stats = postStatService.getPostStats(postId);
+        return ResponseEntity.ok(new ApiResponse<>("ok", stats));
     }
 }

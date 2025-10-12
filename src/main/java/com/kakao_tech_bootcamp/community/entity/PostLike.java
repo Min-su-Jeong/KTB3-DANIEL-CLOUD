@@ -28,4 +28,9 @@ public class PostLike {
     public PostLike(Integer userId, Integer postId) {
         this.id = new PostLikeId(userId, postId);
     }
+
+    // 좋아요 삭제를 위한 메서드
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }

@@ -11,11 +11,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode // JPA 복합키 비교 시 사용
-public class PostLikeId {
-	@Column(name = "user_id")
-	private Integer userId;
+@EqualsAndHashCode
+public class PostImageId {
+    @Column(name = "post_id")
+    private Integer postId;
 
-	@Column(name = "post_id")
-	private Integer postId;
+    @Column(name = "image_id")
+    private Integer imageId;
 }
