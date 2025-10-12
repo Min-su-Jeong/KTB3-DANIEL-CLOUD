@@ -46,7 +46,8 @@ public class ImageController {
     }
 
     // 이미지 조회
-    @GetMapping("/{imageId}"    public ResponseEntity<ApiResponse<Map<String, Object>>> getImage(@PathVariable Integer imageId) {
+    @GetMapping("/{imageId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getImage(@PathVariable Integer imageId) {
         try {
             Image image = imageService.getImage(imageId);
             
