@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,14 @@ public class Comment {
     @Column(name = "comment_id")
     private Integer commentId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+  
     @Column(name = "user_id", nullable = false)
     private Integer userId;
 
@@ -30,6 +39,12 @@ public class Comment {
 
     @Column(name = "parent_id")
     private Integer parentId;
+
+    @Column(name = "content", nullable = false, length = 500)
+    private String content;
+
+    @Column(name = "depth", nullable = false)
+    private Integer depth;
 
     @Column(name = "depth", nullable = false)
     private Integer depth = 0;
@@ -40,6 +55,30 @@ public class Comment {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Builder
+    public Comment(Post post, User user, Integer parentId, String content, Integer depth) {
+        this.post = post;
+        this.user = user;
+        this.parentId = parentId;
+        this.content = content;
+        this.depth = depth;
+    }
+
+    // 댓글 수정을 위한 메서드
+    public void updateContent(String content) {
+        this.content = content;
+    }
+
+    // 댓글 내용 수정을 위한 메서드
+    public void updateCommentContent(String content) {
+        this.content = content;
+    }
+}
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
